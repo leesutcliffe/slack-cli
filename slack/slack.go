@@ -12,30 +12,28 @@ import (
 const baseUrl string = "https://slack.com/api/"
 
 // Presence.Set() method 
-// Presence.doRequest method
 type Presence struct {
-	Value string `json:"presence"`
+	Presence string `json:"presence"`
 }
 
-type SlackWorkspace struct {
+type Workspace struct {
 	Name  string `yaml:"name"`
 	Token string `yaml:"token"`
 }
 
 type SlackConfig struct {
 	Default   string           `yaml:"default"`
-	Workspace []SlackWorkspace `yaml:"workspaces"`
+	Workspace []Workspace `yaml:"workspaces"`
 }
 
-
-func (p *Presence) Set(w SlackWorkspace) (string, error) { 
+func SetPresence(w Workspace, value string ) (string, error) { 
 	method := "POST"
 	endpoint := "users.setPresence"
 
 	url := baseUrl+endpoint
-	presenceData := Presence{p.Value}
-	payload, err := json.Marshal(presenceData)
-	
+	presence := Presence{value}
+	payload, err := json.Marshal(presence)
+
 	if err != nil {
 		return "", err
 	}
@@ -49,7 +47,7 @@ func (p *Presence) Set(w SlackWorkspace) (string, error) {
 
 }
 
-func doRequest(req *http.Request, workspace SlackWorkspace) string {
+func doRequest(req *http.Request, workspace Workspace) string {
 	client := &http.Client{}
 
 	token := "Bearer "
@@ -68,8 +66,8 @@ func doRequest(req *http.Request, workspace SlackWorkspace) string {
 	return string(body)
 }
 
-func GetWorkspace(workspaceName string, config SlackConfig) SlackWorkspace {
-	var workspace SlackWorkspace
+func GetWorkspace(workspaceName string, config SlackConfig) Workspace {
+	var workspace Workspace
 
 	for index, _ := range config.Workspace {
 		if config.Workspace[index].Name == workspaceName {
