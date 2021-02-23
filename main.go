@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"slack-cli/slack"
 	"os/user"
+	"slack-cli/slack"
 )
 
 type Presence struct {
@@ -17,10 +17,13 @@ func main() {
 
 	config := slack.ParseConfig(configFile)
 	// TODO: workspace can be set via a cli flag or default
-	workspace := slack.GetWorkspace("cloud", config)
+	workspace := slack.GetWorkspace("", config)
+	status := slack.GetStatus("", config)
 
-	//presence := slack.Presence{Presence: "auto"}
+
 	res, err := slack.SetPresence(workspace, "auto")
+	
+	res, err = slack.SetStatus(workspace, status)
 	if err != nil {
 		return
 	}
