@@ -66,10 +66,9 @@ func (api *Client) SetPresence(value string) (string, error) {
 	method := "POST"
 	endpoint := "users.setPresence"
 	url := baseUrl + endpoint
-	presence := Presence{value}
+	data := Presence{value}
 	
-	req, err := userRequest(url, method, presence)
-
+	req, err := userRequest(url, method, data)
 	res := api.doPost(req)
 	if res.StatusCode != 200 {
 		return "", err
@@ -77,9 +76,9 @@ func (api *Client) SetPresence(value string) (string, error) {
 	return "", nil
 }
 
-func userRequest(url, method string, p Presence) (*http.Request, error) {
+func userRequest(url, method string, data interface{}) (*http.Request, error) {
 	
-	payload, err := json.Marshal(p)
+	payload, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -90,25 +89,20 @@ func userRequest(url, method string, p Presence) (*http.Request, error) {
 	return req, nil
 }
 
-// func SetStatus(w ConfigWorkspace, status SlackStatus) (string, error) {
-// 	method := "POST"
-// 	endpoint := "users.profile.set"
-// 	url := baseUrl + endpoint
-// 	profile := SlackProfile{status}
-// 	fmt.Printf("\n%v\n", profile)
-// 	payload, err := json.Marshal(profile)
+func (api *Client) SetStatus(status SlackStatus) (string, error) {
+	method := "POST"
+	endpoint := "users.profile.set"
+	url := baseUrl + endpoint
+	data := SlackProfile{status}
 
-// 	if err != nil {
-// 		return "", err
-// 	}
+	req, err := userRequest(url, method, data)
+	res := api.doPost(req)
+	if res.StatusCode != 200 {
+		return "", err
+	}
 
-// 	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return doRequest(req, w), nil
-// }
+	return "", nil
+}
 
 func (api *Client) doPost(req *http.Request) *http.Response {
 	client := &http.Client{}
