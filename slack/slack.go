@@ -9,9 +9,6 @@ import (
 	"net/http"
 )
 
-const baseUrl string = "https://slack.com/api/"
-
-// Presence.Set() method
 type Presence struct {
 	Presence string `json:"presence"`
 }
@@ -44,52 +41,80 @@ type ConfigStatus struct {
 	Expiration int
 }
 
-func SetPresence(w ConfigWorkspace, value string) (string, error) {
+type httpClient interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
+type Client struct {
+	token string
+	httpClient httpClient
+	workspace ConfigWorkspace
+}
+
+const baseUrl string = "https://slack.com/api/"
+
+func New(token string) *Client {
+	client := &Client{
+		token: token,
+		httpClient: &http.Client{},
+	}
+
+	return client
+}
+
+func (api *Client) SetPresence(value string) (string, error) {
 	method := "POST"
 	endpoint := "users.setPresence"
 	url := baseUrl + endpoint
 	presence := Presence{value}
-	fmt.Printf("\n%v\n", presence)
-	payload, err := json.Marshal(presence)
+	
+	req, err := userRequest(url, method, presence)
 
-	if err != nil {
+	res := api.doPost(req)
+	if res.StatusCode != 200 {
 		return "", err
 	}
-
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
-	if err != nil {
-		return "", err
-	}
-
-	return doRequest(req, w), nil
-
+	return "", nil
 }
 
-func SetStatus(w ConfigWorkspace, status SlackStatus) (string, error) {
-	method := "POST"
-	endpoint := "users.profile.set"
-	url := baseUrl + endpoint
-	profile := SlackProfile{status}
-	fmt.Printf("\n%v\n", profile)
-	payload, err := json.Marshal(profile)
-
+func userRequest(url, method string, p Presence) (*http.Request, error) {
+	
+	payload, err := json.Marshal(p)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	return doRequest(req, w), nil
+	return req, nil
 }
 
-func doRequest(req *http.Request, workspace ConfigWorkspace) string {
+// func SetStatus(w ConfigWorkspace, status SlackStatus) (string, error) {
+// 	method := "POST"
+// 	endpoint := "users.profile.set"
+// 	url := baseUrl + endpoint
+// 	profile := SlackProfile{status}
+// 	fmt.Printf("\n%v\n", profile)
+// 	payload, err := json.Marshal(profile)
+
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return doRequest(req, w), nil
+// }
+
+func (api *Client) doPost(req *http.Request) *http.Response {
 	client := &http.Client{}
 
 	token := "Bearer "
-	token += workspace.Token
+	token += api.token
 
 	req.Header.Add("Content-type", "application/json; charset=utf-8")
 	req.Header.Add("Authorization", token)
@@ -99,41 +124,29 @@ func doRequest(req *http.Request, workspace ConfigWorkspace) string {
 		fmt.Println(err)
 	}
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	//body, err := ioutil.ReadAll(res.Body)
 
-	return string(body)
+	return res
 }
 
-func GetWorkspace(workspaceName string, config ConfigRoot) ConfigWorkspace {
+
+func GetToken(workspaceName string, config ConfigRoot) string {
 	if workspaceName == "" {
 		workspaceName = config.Default
 	}
 
-	var workspace ConfigWorkspace
+	var workspace string
 
 	for index, _ := range config.Workspace {
 		if config.Workspace[index].Name == workspaceName {
-			workspace = config.Workspace[index]
+			workspace = config.Workspace[index].Token
 			break
 		}
 	}
 	return workspace
 }
 
-// func GetStatus(profileName string, config ConfigRoot) ConfigStatus {
-// 	var status ConfigStatus
-
-// 	for index, _ := range config.Status {
-// 		if config.Status[index].Name == profileName {
-// 			status = config.Status[index]
-// 			status.Expiration = 0
-// 			break
-// 		}
-// 	}
-// 	return status
-// }
-
-func GetStatus(profileName string, config ConfigRoot) SlackStatus {
+func GetStatusProfileFromConfig(profileName string, config ConfigRoot) SlackStatus {
 	var status SlackStatus
 
 	for index, _ := range config.Status {

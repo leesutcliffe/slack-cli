@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"os/user"
 	"slack-cli/slack"
 )
@@ -17,15 +17,22 @@ func main() {
 
 	config := slack.ParseConfig(configFile)
 	// TODO: workspace can be set via a cli flag or default
-	workspace := slack.GetWorkspace("", config)
-	status := slack.GetStatus("", config)
+	token := slack.GetToken("", config)
+	//token := workspace.Token
 
+	// new slack client
+	api := slack.New(token)
+	_, err := api.SetPresence("auto")
 
-	res, err := slack.SetPresence(workspace, "auto")
 	
-	res, err = slack.SetStatus(workspace, status)
+	// status := slack.GetStatus("", config)
+	// res, err = slack.SetStatus(workspace, status)
+
+
+	//_, err := slack.SetPresence(workspace, "auto")
+	
 	if err != nil {
 		return
 	}
-	fmt.Println(res)
+	//fmt.Println(res)
 }
