@@ -9,31 +9,37 @@ import (
 	"net/http"
 )
 
+// Presence holds user presence value {
 type Presence struct {
 	Presence string `json:"presence"`
 }
 
-type SlackProfile struct {
-	Profile SlackStatus `json:"profile"`
+// root type for Slack user profile
+type SlackProfileRoot struct {
+	Profile SlackProfile `json:"profile"`
 }
 
-type SlackStatus struct {
+// key value pairs of user profile settings
+type SlackProfile struct {
 	Message    string `json:"status_text"`
 	Emoji      string `json:"status_emoji"`
 	Expiration int    `json:"status_expiration"`
 }
 
+// slack workspace as defined by the configuration file
 type ConfigWorkspace struct {
 	Name  string `yaml:"name"`
 	Token string `yaml:"token"`
 }
 
+// root configuration file
 type ConfigRoot struct {
 	Default   string            `yaml:"default"`
 	Workspace []ConfigWorkspace `yaml:"workspaces"`
 	Status    []ConfigStatus    `yaml:"status"`
 }
 
+// preset user status from config file
 type ConfigStatus struct {
 	Name       string `yaml:"name"`
 	Message    string `yaml:"message"`
@@ -41,18 +47,22 @@ type ConfigStatus struct {
 	Expiration int
 }
 
+// Do method on httpClient
 type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// Basic api client 
 type Client struct {
 	token string
 	httpClient httpClient
 	workspace ConfigWorkspace
 }
 
+// base URL for Slack API
 const baseUrl string = "https://slack.com/api/"
 
+// returns new slack client
 func New(token string) *Client {
 	client := &Client{
 		token: token,
@@ -62,6 +72,7 @@ func New(token string) *Client {
 	return client
 }
 
+// SetPresence method sets the users presence to away or auto 
 func (api *Client) SetPresence(value string) (string, error) {
 	method := "POST"
 	endpoint := "users.setPresence"
@@ -69,13 +80,14 @@ func (api *Client) SetPresence(value string) (string, error) {
 	data := Presence{value}
 	
 	req, err := userRequest(url, method, data)
-	res := api.doPost(req)
+	res := doPost(req, api.httpClient, api.token)
 	if res.StatusCode != 200 {
 		return "", err
 	}
 	return "", nil
 }
 
+// builds the HTTP request
 func userRequest(url, method string, data interface{}) (*http.Request, error) {
 	
 	payload, err := json.Marshal(data)
@@ -89,14 +101,15 @@ func userRequest(url, method string, data interface{}) (*http.Request, error) {
 	return req, nil
 }
 
-func (api *Client) SetStatus(status SlackStatus) (string, error) {
+// SetStatus method configures custom user status
+func (api *Client) SetStatus(status SlackProfile) (string, error) {
 	method := "POST"
 	endpoint := "users.profile.set"
 	url := baseUrl + endpoint
-	data := SlackProfile{status}
+	data := SlackProfileRoot{status}
 
 	req, err := userRequest(url, method, data)
-	res := api.doPost(req)
+	res := doPost(req, api.httpClient, api.token)
 	if res.StatusCode != 200 {
 		return "", err
 	}
@@ -104,26 +117,25 @@ func (api *Client) SetStatus(status SlackStatus) (string, error) {
 	return "", nil
 }
 
-func (api *Client) doPost(req *http.Request) *http.Response {
-	client := &http.Client{}
+//TODO: create type for req so to not rely on http.Request - better for testing
+// initialtes POST request to Slack API
+func doPost(req *http.Request, client httpClient, token string) *http.Response {
 
-	token := "Bearer "
-	token += api.token
+	auth := fmt.Sprintf("Bearer %s", token)
 
 	req.Header.Add("Content-type", "application/json; charset=utf-8")
-	req.Header.Add("Authorization", token)
+	req.Header.Add("Authorization", auth)
 
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer res.Body.Close()
-	//body, err := ioutil.ReadAll(res.Body)
 
 	return res
 }
 
-
+// returns auth token from config file
 func GetToken(workspaceName string, config ConfigRoot) string {
 	if workspaceName == "" {
 		workspaceName = config.Default
@@ -140,8 +152,9 @@ func GetToken(workspaceName string, config ConfigRoot) string {
 	return workspace
 }
 
-func GetStatusProfileFromConfig(profileName string, config ConfigRoot) SlackStatus {
-	var status SlackStatus
+// returns selected status profile from config file
+func GetStatusProfileFromConfig(profileName string, config ConfigRoot) SlackProfile {
+	var status SlackProfile
 
 	for index, _ := range config.Status {
 		if config.Status[index].Name == profileName {
@@ -154,6 +167,7 @@ func GetStatusProfileFromConfig(profileName string, config ConfigRoot) SlackStat
 	return status
 }
 
+// parses yaml config
 func ParseConfig(configFile string) ConfigRoot {
 
 	data, err := ioutil.ReadFile(configFile)
