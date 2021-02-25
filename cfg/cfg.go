@@ -51,24 +51,38 @@ type SlackProfile struct {
 	Expiration int   
 }
 
-// parses yaml config
-func parser() (*Config, error) {
+// returns new Config type
+func New() (*Config, error) {
+	var cfg = &Config{}
 
-	//TODO: consider movnig user.Current() to interface - better for testing
+	yaml, err := cfg.GetYaml()
+	if err != nil {
+		return nil, err
+	}
+	
+	err = cfg.Parse(yaml) 
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func (cfg *Config) Parse(data []byte) error {
+	return yaml.Unmarshal(data, cfg)
+}
+
+func (cfg *Config) GetYaml() ([]byte, error) {
 	usr, _ := user.Current()
 	cfgFile := fmt.Sprintf("%s%s", usr.HomeDir, configFile)
-
 	data, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		return nil, err
-	}
-	var config = &Config{}
-	err = yaml.Unmarshal(data, &config)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return config, nil
+	return data, nil
+
 }
 
 func (cfg *Config) GetTokenFromConfig(workspaceName string) string {
@@ -84,26 +98,14 @@ func (cfg *Config) GetTokenFromConfig(workspaceName string) string {
 			break
 		}
 	}
+
 	return token
 }
 
 // returns auth token from config file
-func GetToken(workspaceName string) string {
-
-	_, err := parser()
-	if err != nil {
-		fmt.Printf("Unable to parse YAML: %s", err)
-	}
-
-	cfg := Config{}
-	token := cfg.GetTokenFromConfig(workspaceName)
-
-	return token
+func (cfg *Config) GetToken(workspaceName string) string {
+	return cfg.GetTokenFromConfig(workspaceName)
 }
-
-// func GetStatus(profileName string) {
-
-// }
 
 //returns selected status profile from config file
 func (cfg *Config) GetStatusProfileFromConfig(profileName string) SlackProfile {

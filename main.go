@@ -16,14 +16,17 @@ func main() {
 
 
 	//config := cfg.Parse()
+	//config := cfg.New()
+	config, _ := cfg.New()
+	
 	// TODO: workspace can be set via a cli flag or default
-	token := cfg.GetToken("")
+	token := config.GetToken("")
 
 	// new slack client
 	api := slack.New(token)
 	_, err := api.SetPresence("auto")
 
-	status := cfg.GetStatusProfileFromConfig("")
+	status := config.GetStatusProfileFromConfig("")
 	_, err = api.SetStatus(status)
 
 	if err != nil {
