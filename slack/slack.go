@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	//"gopkg.in/yaml.v2"
+	//"io/ioutil"
 	"net/http"
 )
 
@@ -14,11 +14,13 @@ type Presence struct {
 	Presence string `json:"presence"`
 }
 
+//TODO: duplication in cfg - refasctor
 // root type for Slack user profile
 type SlackProfileRoot struct {
 	Profile SlackProfile `json:"profile"`
 }
 
+//TODO: duplication in cfg - refasctor
 // key value pairs of user profile settings
 type SlackProfile struct {
 	Message    string `json:"status_text"`
@@ -32,20 +34,7 @@ type ConfigWorkspace struct {
 	Token string `yaml:"token"`
 }
 
-// root configuration file
-type ConfigRoot struct {
-	Default   string            `yaml:"default"`
-	Workspace []ConfigWorkspace `yaml:"workspaces"`
-	Status    []ConfigStatus    `yaml:"status"`
-}
 
-// preset user status from config file
-type ConfigStatus struct {
-	Name       string `yaml:"name"`
-	Message    string `yaml:"message"`
-	Emoji      string `yaml:"emoji"`
-	Expiration int
-}
 
 // Do method on httpClient
 type httpClient interface {
@@ -135,50 +124,7 @@ func doPost(req *http.Request, client httpClient, token string) *http.Response {
 	return res
 }
 
-// returns auth token from config file
-func GetToken(workspaceName string, config ConfigRoot) string {
-	if workspaceName == "" {
-		workspaceName = config.Default
-	}
 
-	var workspace string
 
-	for index, _ := range config.Workspace {
-		if config.Workspace[index].Name == workspaceName {
-			workspace = config.Workspace[index].Token
-			break
-		}
-	}
-	return workspace
-}
 
-// returns selected status profile from config file
-func GetStatusProfileFromConfig(profileName string, config ConfigRoot) SlackProfile {
-	var status SlackProfile
 
-	for index, _ := range config.Status {
-		if config.Status[index].Name == profileName {
-			status.Emoji = config.Status[index].Emoji
-			status.Message = config.Status[index].Message
-			status.Expiration = 0
-			break
-		}
-	}
-	return status
-}
-
-// parses yaml config
-func ParseConfig(configFile string) ConfigRoot {
-
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		fmt.Println(err)
-	}
-	var config ConfigRoot
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		fmt.Printf("Error parsing YAML file: %s\n", err)
-	}
-
-	return config
-}

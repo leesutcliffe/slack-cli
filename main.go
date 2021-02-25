@@ -2,8 +2,9 @@ package main
 
 import (
 	//"fmt"
-	"os/user"
+	//"os/user"
 	"slack-cli/slack"
+	"slack-cli/cfg"
 )
 
 type Presence struct {
@@ -12,18 +13,17 @@ type Presence struct {
 
 func main() {
 
-	usr, _ := user.Current()
-	configFile := usr.HomeDir + "/.slack/config"
 
-	config := slack.ParseConfig(configFile)
+
+	//config := cfg.Parse()
 	// TODO: workspace can be set via a cli flag or default
-	token := slack.GetToken("", config)
+	token := cfg.GetToken("")
 
 	// new slack client
 	api := slack.New(token)
 	_, err := api.SetPresence("auto")
 
-	status := slack.GetStatusProfileFromConfig("", config)
+	status := cfg.GetStatusProfileFromConfig("")
 	_, err = api.SetStatus(status)
 
 	if err != nil {
