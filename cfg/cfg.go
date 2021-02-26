@@ -9,14 +9,6 @@ import (
 
 const configFile = "/.slack/config"
 
-// type CurrentUser interface {
-// 	Current() (*user.User, error)
-// }
-
-// type Parser struct{
-// 	CurrentUser CurrentUser
-// }
-
 // root configuration
 type Config struct {
 	Default   string            `yaml:"default"`
@@ -38,17 +30,15 @@ type ConfigStatus struct {
 	Emoji      string `yaml:"emoji"`
 	Expiration int
 }
-
-// root type for Slack user profile
 type SlackProfileRoot struct {
 	Profile SlackProfile `json:"profile"`
 }
 
 // key value pairs of user profile settings
 type SlackProfile struct {
-	Message    string
-	Emoji      string
-	Expiration int   
+	Message    string `json:"status_text"`
+	Emoji      string `json:"status_emoji"`
+	Expiration int    `json:"status_expiration"`
 }
 
 // returns new Config type
@@ -68,10 +58,12 @@ func New() (*Config, error) {
 	return cfg, nil
 }
 
+// Parse method on Config
 func (cfg *Config) Parse(data []byte) error {
-	return yaml.Unmarshal(data, cfg)
+	return yaml.Unmarshal(data, &cfg)
 }
 
+// GetYaml method - retrieves yaml from config file
 func (cfg *Config) GetYaml() ([]byte, error) {
 	usr, _ := user.Current()
 	cfgFile := fmt.Sprintf("%s%s", usr.HomeDir, configFile)
@@ -85,6 +77,7 @@ func (cfg *Config) GetYaml() ([]byte, error) {
 
 }
 
+// Extracts auth token from config
 func (cfg *Config) GetTokenFromConfig(workspaceName string) string {
 	var token string
 
@@ -108,7 +101,7 @@ func (cfg *Config) GetToken(workspaceName string) string {
 }
 
 //returns selected status profile from config file
-func (cfg *Config) GetStatusProfileFromConfig(profileName string) SlackProfile {
+func (cfg *Config) GetStatusProfileFromConfig(profileName string) SlackProfileRoot {
 	var status SlackProfile
 
 	for index, _ := range cfg.Status {
@@ -119,5 +112,5 @@ func (cfg *Config) GetStatusProfileFromConfig(profileName string) SlackProfile {
 			break
 		}
 	}
-	return status
+	return SlackProfileRoot{status}
 }

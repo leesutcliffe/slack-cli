@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	//"gopkg.in/yaml.v2"
-	//"io/ioutil"
 	"net/http"
 )
 
@@ -14,27 +12,11 @@ type Presence struct {
 	Presence string `json:"presence"`
 }
 
-//TODO: duplication in cfg - refasctor
-// root type for Slack user profile
-type SlackProfileRoot struct {
-	Profile SlackProfile `json:"profile"`
-}
-
-//TODO: duplication in cfg - refasctor
-// key value pairs of user profile settings
-type SlackProfile struct {
-	Message    string `json:"status_text"`
-	Emoji      string `json:"status_emoji"`
-	Expiration int    `json:"status_expiration"`
-}
-
 // slack workspace as defined by the configuration file
 type ConfigWorkspace struct {
 	Name  string `yaml:"name"`
 	Token string `yaml:"token"`
 }
-
-
 
 // Do method on httpClient
 type httpClient interface {
@@ -69,6 +51,10 @@ func (api *Client) SetPresence(value string) (string, error) {
 	data := Presence{value}
 	
 	req, err := userRequest(url, method, data)
+	if err != nil {
+		return "", err
+	}
+
 	res := doPost(req, api.httpClient, api.token)
 	if res.StatusCode != 200 {
 		return "", err
@@ -91,19 +77,22 @@ func userRequest(url, method string, data interface{}) (*http.Request, error) {
 }
 
 // SetStatus method configures custom user status
-func (api *Client) SetStatus(status SlackProfile) (string, error) {
+func (api *Client) SetStatus(data interface{}) (*http.Response, error) {
 	method := "POST"
 	endpoint := "users.profile.set"
 	url := baseUrl + endpoint
-	data := SlackProfileRoot{status}
-
+	
 	req, err := userRequest(url, method, data)
-	res := doPost(req, api.httpClient, api.token)
-	if res.StatusCode != 200 {
-		return "", err
+	if err != nil {
+		return nil, err
 	}
 
-	return "", nil
+	res := doPost(req, api.httpClient, api.token)
+	if res.StatusCode != 200 {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 //TODO: create type for req so to not rely on http.Request - better for testing
@@ -114,13 +103,12 @@ func doPost(req *http.Request, client httpClient, token string) *http.Response {
 
 	req.Header.Add("Content-type", "application/json; charset=utf-8")
 	req.Header.Add("Authorization", auth)
-
+	
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer res.Body.Close()
-
 	return res
 }
 
