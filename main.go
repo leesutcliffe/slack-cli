@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
-	//"os/user"
-	"slack-cli/slack"
-	"slack-cli/cfg"
+	"slack-cli/cmd"
 )
 
 type Presence struct {
@@ -12,25 +9,5 @@ type Presence struct {
 }
 
 func main() {
-
-
-
-	//config := cfg.Parse()
-	//config := cfg.New()
-	config, err := cfg.New()
-
-	// TODO: workspace can be set via a cli flag or default
-	token := config.GetToken("")
-
-	// new slack client
-	api := slack.New(token)
-	_, err = api.SetPresence("auto")
-
-	status := config.GetStatusProfileFromConfig("")
-	res, err := api.SetStatus(status)
-
-	if err != nil {
-		fmt.Printf("error: %v", err)
-	}
-	fmt.Println(res)
+	cmd.Execute()
 }
