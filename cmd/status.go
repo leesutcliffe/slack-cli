@@ -22,8 +22,10 @@ slack status
 	},
 }
 
+// temp function
+//TODO: break up into separate methods so token can be resused 
 func doStuff() {
-	fmt.Printf("profile: %v", Profile)
+	
 	config, err := cfg.New()
 	if err != nil {
 		fmt.Printf("error: %v", err)
@@ -32,10 +34,25 @@ func doStuff() {
 	token := config.GetToken("")
 	api := slack.New(token)
 
+	if Away != false {
+		res, err := api.SetPresence("away")
+		if err != nil {
+			fmt.Printf("error: %v", err)
+		}
+		fmt.Println(res)
+	} else {
+		res, err := api.SetPresence("auto")
+		if err != nil {
+			fmt.Printf("error: %v", err)
+		}
+		fmt.Println(res)
+	}
+
 	status := config.GetStatusProfileFromConfig(Profile)
-	res, err := api.SetStatus(status)
+	_, err = api.SetStatus(status)
 	if err != nil {
 		fmt.Printf("error: %v", err)
 	}
-	fmt.Println(res)
+
 }
+
