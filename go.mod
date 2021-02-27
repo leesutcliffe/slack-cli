@@ -1,4 +1,4 @@
-module slack-cli
+module slack
 
 go 1.15
 

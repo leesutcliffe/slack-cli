@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"slack-cli/cfg"
-	"slack-cli/slack"
+	"slack/cfg"
+	"slack/slack"
 )
 
 var cmdStatus = &cobra.Command{

@@ -18,8 +18,6 @@ func Execute() {
 		Use: "set [resource to set]",
 	}
 
-	//cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
-
 	var rootCmd = &cobra.Command{Use: "slack"}
 	rootCmd.AddCommand(cmdSet)
 	cmdSet.AddCommand(cmdStatus)

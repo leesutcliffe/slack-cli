@@ -1,7 +1,7 @@
 package main
 
 import (
-	"slack-cli/cmd"
+	"slack/cmd"
 )
 
 func main() {
