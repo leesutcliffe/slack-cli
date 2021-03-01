@@ -32,9 +32,13 @@ status:
 default: work
 ```
 
-# install 
+# compile
 
-`go build'
+`go build -o bin/slack'
+
+# install
+
+`go install'
 
 # commands
 
